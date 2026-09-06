@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: family_chores
+      POSTGRES_USER: family_chores
+      POSTGRES_PASSWORD: family_chores
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U family_chores"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    environment:
+      DATABASE_URL: postgres://family_chores:family_chores@db:5432/family_chores
+      SECRET_KEY: dev-secret-key-change-me
+      DEBUG: "True"
+      ALLOWED_HOSTS: "*"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
